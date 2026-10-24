@@ -1,8 +1,6 @@
 name: Revise approved binary-only 1.17.63 release
 on:
-  push:
-    branches: [binary-revision-v1.17.63]
-    paths: [.release-revision-1.17.63.json]
+  workflow_dispatch:
 permissions:
   contents: write
 concurrency:
@@ -10,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   revise:
-    if: github.repository == 'TechSavage1989/network-toolkit-releases'
+    if: ${{ false }} # One-time revision consumed; retained disabled for audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
