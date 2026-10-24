@@ -1,0 +1,73 @@
+name: Publish validated binary release
+on:
+  push:
+    branches: [main]
+    paths: [release.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: binary-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate exact public package and checksums
+        id: package
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, stat, zipfile
+          root = pathlib.Path.cwd()
+          m = json.loads((root / 'release.json').read_text())
+          version = m['version']
+          assert re.fullmatch(r'\d+\.\d+\.\d+', version), 'Invalid version'
+          expected = f'Network_Toolkit_{version}_Update.zip'
+          folder = root / 'binaries' / version
+          package = folder / expected
+          sums = folder / 'SHA256SUMS'
+          digest = hashlib.sha256(package.read_bytes()).hexdigest()
+          assert digest == m['sha256'], 'Manifest checksum mismatch'
+          assert sums.read_text().strip() == f'{digest}  {expected}', 'External checksum mismatch'
+          assert set(m['members']), 'Empty package allowlist'
+          with zipfile.ZipFile(package) as z:
+              entries = [i for i in z.infolist() if not i.is_dir()]
+              assert len(entries) == len(m['members']), 'Duplicate/extra archive entries'
+              assert {i.filename for i in entries} == set(m['members']), 'Package file allowlist mismatch'
+              for i in entries:
+                  p = pathlib.PurePosixPath(i.filename)
+                  assert not p.is_absolute() and '..' not in p.parts and '\\' not in i.filename
+                  assert p.parts[0] == f'Network_Toolkit_{version}', 'Wrong package root'
+                  assert not stat.S_ISLNK(i.external_attr >> 16), 'Symlink not allowed'
+                  assert p.name == 'SHA256SUMS' or p.suffix.lower() in ('.exe', '.txt', '.md'), 'Non-binary/document member'
+              assert sum(i.filename.lower().endswith('.exe') for i in entries) == 1
+              exe = next(i for i in entries if i.filename.lower().endswith('.exe'))
+              assert z.read(exe)[:2] == b'MZ', 'Missing Windows executable header'
+              prefix = f'Network_Toolkit_{version}/'
+              internal = z.read(prefix + 'SHA256SUMS').decode().strip().splitlines()
+              actual = {}
+              for line in internal:
+                  checksum, name = line.split('  ', 1)
+                  assert name not in actual and '/' not in name and '\\' not in name
+                  actual[name] = checksum
+              assert set(actual) == {pathlib.PurePosixPath(i.filename).name for i in entries if not i.filename.endswith('/SHA256SUMS')}
+              for name, checksum in actual.items():
+                  assert hashlib.sha256(z.read(prefix + name)).hexdigest() == checksum, 'Internal checksum mismatch'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              print(f'version={version}', file=f)
+              print(f'zip=binaries/{version}/{expected}', file=f)
+              print(f'sums=binaries/{version}/SHA256SUMS', file=f)
+          PY
+      - name: Publish binary-only assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.package.outputs.version }}
+          ZIP: ${{ steps.package.outputs.zip }}
+          SUMS: ${{ steps.package.outputs.sums }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          gh release create "$TAG" "$ZIP" "$SUMS" --draft --target "$GITHUB_SHA" --title "James Network Toolkit ${VERSION}" --notes "Windows application update. Download the Update ZIP through the app, or verify its SHA-256 using SHA256SUMS. This repository distributes compiled binaries only."
+          gh release edit "$TAG" --draft=false --latest
