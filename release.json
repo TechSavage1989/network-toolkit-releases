@@ -1,10 +1,10 @@
 {
-  "version": "1.17.59",
-  "sha256": "9a8927a6ceca95732b55b2479c343192bd417e8ea447af5eb6c47267fd38fcef",
+  "version": "1.17.60",
+  "sha256": "fccab289c1048c0937d08644a1fbd86da7066b782b9eb036748a5da622f78786",
   "members": [
-    "Network_Toolkit_1.17.59/Network_Toolkit_1.17.59_Windows_x64.exe",
-    "Network_Toolkit_1.17.59/SHA256SUMS",
-    "Network_Toolkit_1.17.59/THIRD_PARTY_NOTICES.txt",
-    "Network_Toolkit_1.17.59/UPDATING.txt"
+    "Network_Toolkit_1.17.60/Network_Toolkit_1.17.60_Windows_x64.exe",
+    "Network_Toolkit_1.17.60/SHA256SUMS",
+    "Network_Toolkit_1.17.60/THIRD_PARTY_NOTICES.txt",
+    "Network_Toolkit_1.17.60/UPDATING.txt"
   ]
 }
