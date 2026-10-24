@@ -1,0 +1,33 @@
+name: Revise approved binary-only 1.17.63 release
+on:
+  push:
+    branches: [binary-revision-v1.17.63]
+    paths: [.release-revision-1.17.63.json]
+permissions:
+  contents: write
+concurrency:
+  group: binary-release
+  cancel-in-progress: false
+jobs:
+  revise:
+    if: github.repository == 'TechSavage1989/network-toolkit-releases'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify request, exact binary and original release; back up originals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/revise-binaries.py backup
+      - name: Retain verified original release assets before replacement
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v1.17.63-assets-${{ github.run_id }}
+          path: previous-release/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Replace only approved assets and verify preserved release identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/revise-binaries.py publish

@@ -1,10 +1,11 @@
 {
   "version": "1.17.63",
-  "sha256": "ee45bbd76a3663982d177925e171d0a2fcb086b6fd7e2618995f3533ced7d1a2",
+  "sha256": "6bf8305211166b14841505e5bca1e4a9358051ac47d45060a865a5dd64fac7d7",
   "members": [
     "Network_Toolkit_1.17.63/Network_Toolkit_1.17.63_Windows_x64.exe",
     "Network_Toolkit_1.17.63/SHA256SUMS",
     "Network_Toolkit_1.17.63/THIRD_PARTY_NOTICES.txt",
     "Network_Toolkit_1.17.63/UPDATING.txt"
-  ]
+  ],
+  "revision": true
 }
